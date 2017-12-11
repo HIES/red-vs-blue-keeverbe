@@ -7,48 +7,49 @@ public class EmptyMap
 {
     public static void visualize(String region) throws Exception
     {
+
         File f = new File("./input/" + region +".txt");
         Scanner s = new Scanner(f);
-        s.useDelimiter("   ");
         System.out.println("delim is: " + s.delimiter());
-        String[] limits = new String[4];
-        //s.nextLine().split(" ");
-        limits[0] = s.next();
-        System.out.println(limits[0]);
-        limits[1] = s.next();
-        System.out.println(limits[1]);
-        //s.nextLine().split(" ");
-        limits[2] = s.next();
-        System.out.println(limits[2]);
-        limits[3] = s.next();
-        System.out.println(limits[3]);
-        double [] mapLimits = new double[4];
-        String[] coordinates = new String[2];
-        double [] xy = new double[2];
 
-        for (int i = 0; i < 4; i++)
-        {
-            mapLimits[i] = Double.parseDouble(limits[i]);
-            System.out.println(mapLimits[i]);
-        }
+        String[] mins = s.nextLine().split("   ");
+        String[] maxs = s.nextLine().split("   ");
+        int regions = s.nextInt();
+        s.nextLine();
 
-        StdDraw.setCanvasSize((int) (512*(((mapLimits[2]-mapLimits[0])/(mapLimits[3]-mapLimits[1])))), 512);
-        StdDraw.setXscale(mapLimits[0],mapLimits[2]);
-        StdDraw.setYscale(mapLimits[1],mapLimits[3]);
+        double [] mapLims = new double[4];
+        mapLims[0] = Double.parseDouble(mins[0]);
+        mapLims[1] = Double.parseDouble(mins[1]);
+        mapLims[2] = Double.parseDouble(maxs[0]);
+        mapLims[3] = Double.parseDouble(maxs[1]);   
+        StdDraw.setCanvasSize((int) (512*(((mapLims[2]-mapLims[0])/(mapLims[3]-mapLims[1])))), 512);
+        StdDraw.setXscale(mapLims[0],mapLims[2]);
+        StdDraw.setYscale(mapLims[1],mapLims[3]);
 
         StdDraw.enableDoubleBuffering();
-
-        while(s.hasNextLine())
+        String[] coords = new String[2];
+        int z = 0;
+        while(z < regions) 
         {
-            if (s.hasNextDouble())
+            s.nextLine();//Advance past blank
+            s.nextLine();
+            s.nextLine();
+            int subregions = s.nextInt();
+            s.nextLine();
+            int c = 0;
+            double[] x = new double[subregions];
+            double[] y = new double[subregions];
+            while (c < subregions)
             {
-            coordinates = s.nextLine().split("   ");
-            xy[0] = Double.parseDouble(coordinates[0]);
-            xy[1] = Double.parseDouble(coordinates[1]);
-            StdDraw.point(xy[0],xy[1]);
-           } 
+                coords = s.nextLine().split("   ");
+                x[c] = Double.parseDouble(coords[0]);
+                y[c] = Double.parseDouble(coords[1]);
+                c++;
+            }
+            StdDraw.polygon(x , y);
+            z++;
         }
-
+        System.out.println(z);
         StdDraw.show();
         s.close();
     }
