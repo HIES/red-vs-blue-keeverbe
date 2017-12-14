@@ -3,6 +3,7 @@ import java.util.Scanner;
 import java.lang.Exception;
 import java.util.ArrayList;
 import java.util.HashMap;
+
 public class ElectoralMap
 {
     private class Subregion
@@ -13,7 +14,7 @@ public class ElectoralMap
         private int oVotes;
         private double[] xCoordinates;
         private double[] yCoordinates;
-        private String color;
+
         public Subregion(String n)
         {
             this.name = n;
@@ -22,26 +23,21 @@ public class ElectoralMap
             oVotes = 0;
             xCoordinates = null;
             yCoordinates = null;
-            color = "";
         }
     }
-    //Had to make visualize not static, as I was referencing a non-static and it wouldn't compile
+
     public void visualize(String region, int year) throws Exception
     { 
-        //Make a map (region = key, arraylist of subregions = values)
         HashMap<String, ArrayList<Subregion>> electoralMap = new HashMap<>();
-        //Make arraylistof subregions
-        ArrayList<Subregion> subregions = new ArrayList<>();
-        //Put the region and subregion arrayList into map
-        electoralMap.put(region, subregions);
-        
-        //Open geographic data
+        ArrayList<Subregion> subs = new ArrayList<>();
+        electoralMap.put(region, subs);
+
         File f = new File("./input/" + region +".txt");
         Scanner s = new Scanner(f);
 
         String[] mins = s.nextLine().split("   ");
         String[] maxs = s.nextLine().split("   ");
-        int regions = s.nextInt();
+        int subregion = s.nextInt();
         s.nextLine();
 
         double [] mapLims = new double[4];
@@ -56,20 +52,24 @@ public class ElectoralMap
         StdDraw.enableDoubleBuffering();
         String[] coords = new String[2];
         int z = 0;
-        while(z < regions) 
+
+        while(z < subregion) 
         {
-            s.nextLine();//Advance past blank
-            //Save Subregion name
-            String n = s.next();
-            //Make new subregion a to be added into the arraylist
-            Subregion a = new Subregion(n);
-            s.nextLine();//Advance past subregion
-            s.nextLine();//Advance past region
+            s.nextLine();
+
+            String subname = s.nextLine();
+            Subregion newSub = new Subregion(subname);
+
+            s.nextLine();
+
             int points = s.nextInt();
-            s.nextLine();//Advance past no. data points
-            int c = 0;
+
+            s.nextLine();
+
             double[] x = new double[points];
             double[] y = new double[points];
+
+            int c = 0;
             while (c < points)
             {
                 coords = s.nextLine().split("   ");
@@ -77,56 +77,71 @@ public class ElectoralMap
                 y[c] = Double.parseDouble(coords[1]);
                 c++;
             }
-            //Assign xCoordinates and yCoordinates to a fields
-            a.xCoordinates = x;
-            a.yCoordinates = y;
-            //Close geographic file
-            //s.close();
-            
-            //Open electoral data file using subregion name and make scanner
-            File f2 = new File("./input/" + region + String.valueOf(year) +".txt");
-            Scanner s2 = new Scanner(f2);
-            s2.nextLine();
-            String[] stuff = new String[4];
-            int rSum = 0;
-            int dSum = 0;
-            int oSum = 0;
-            while (s2.hasNextLine())
-            {
-                stuff = s2.nextLine().split(",");
-                rSum+= Integer.parseInt(stuff[1]);
-                dSum+= Integer.parseInt(stuff[2]);
-                oSum+= Integer.parseInt(stuff[3]);
-            }
-            //Assign vote counts for subregion
-            a.rVotes = rSum;
-            a.dVotes = dSum;
-            a.oVotes = oSum;
-            //Assign color for subregion
-            if (rSum > dSum && rSum > oSum)
-            {
-                a.color = "RED";
-                StdDraw.setPenColor(StdDraw.RED);
-            }
-            else if (dSum > rSum && dSum > oSum)
-            {
-                a.color = "BLUE";
-                StdDraw.setPenColor(StdDraw.BLUE);
-            }
-            else
-            {
-                a.color = "GREEN";
-                StdDraw.setPenColor(StdDraw.GREEN);
-            }
-            System.out.println(a.color);
-            s2.close();
-            subregions.add(a);
-  
-            StdDraw.filledPolygon(x , y);
+            StdDraw.polygon(x , y);
+
+            newSub.xCoordinates = x;
+            newSub.yCoordinates = y;
+
+            electoralMap.get(region).add(newSub);
+
             z++;
         }
-        electoralMap.put(region, subregions);
+
         s.close();
+        StdDraw.show();
+
+        File f2 = new File("./input/" + region + String.valueOf(year) +".txt");
+        Scanner s2 = new Scanner(f2);
+        s2.nextLine();
+
+        String[] voteHolder = new String[4];
+        int[] votes = new int[3];
+
+        while (s2.hasNextLine())
+        {
+            voteHolder = s2.nextLine().split(",");
+            votes[0] = Integer.parseInt(voteHolder[1]);
+            votes[1] = Integer.parseInt(voteHolder[2]);
+            votes[2] = Integer.parseInt(voteHolder[3]);
+            String key = voteHolder[0];
+
+            for(int i = 0; i < subregion; i++)
+            {
+                if (electoralMap.get(region).get(i).name.equals(key))
+                {
+                    electoralMap.get(region).get(i).rVotes = votes[0];
+                    electoralMap.get(region).get(i).dVotes = votes[1];
+                    electoralMap.get(region).get(i).oVotes = votes[2];
+                }
+            }
+        }
+        s2.close();
+
+        for(int i = 0; i < subregion; i++)
+        {
+            if (electoralMap.get(region).get(i).rVotes > electoralMap.get(region).get(i).dVotes && 
+            electoralMap.get(region).get(i).rVotes > electoralMap.get(region).get(i).oVotes)
+            {
+                StdDraw.setPenColor(StdDraw.RED);
+                StdDraw.filledPolygon(electoralMap.get(region).get(i).xCoordinates, 
+                electoralMap.get(region).get(i).yCoordinates);
+            }
+            else if (electoralMap.get(region).get(i).dVotes > electoralMap.get(region).get(i).rVotes && 
+            electoralMap.get(region).get(i).dVotes > electoralMap.get(region).get(i).oVotes)
+            {
+                StdDraw.setPenColor(StdDraw.BLUE);
+                StdDraw.filledPolygon(electoralMap.get(region).get(i).xCoordinates, 
+                electoralMap.get(region).get(i).yCoordinates);
+            }
+            else if (electoralMap.get(region).get(i).oVotes > electoralMap.get(region).get(i).rVotes && 
+            electoralMap.get(region).get(i).oVotes > electoralMap.get(region).get(i).dVotes)
+            {
+                StdDraw.setPenColor(StdDraw.GREEN);
+                StdDraw.filledPolygon(electoralMap.get(region).get(i).xCoordinates, 
+                electoralMap.get(region).get(i).yCoordinates);
+            }
+        }
+        
         StdDraw.show();
     }
 }
