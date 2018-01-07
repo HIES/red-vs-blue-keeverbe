@@ -6,6 +6,7 @@ import java.util.HashMap;
 
 public class ElectoralMap
 {
+    HashMap<String, HashMap<String, ArrayList<Subregion>>> electoralMap = new HashMap<>();
     private class Subregion
     {
         private String name;
@@ -26,18 +27,14 @@ public class ElectoralMap
         }
     }
 
-    public void visualize(String region, int year) throws Exception
-    { 
-        HashMap<String, ArrayList<Subregion>> electoralMap = new HashMap<>();
-        ArrayList<Subregion> subs = new ArrayList<>();
-        electoralMap.put(region, subs);
-
+    public void setScale(String region) throws Exception
+    {
         File f = new File("./input/" + region +".txt");
         Scanner s = new Scanner(f);
 
         String[] mins = s.nextLine().split("   ");
         String[] maxs = s.nextLine().split("   ");
-        int subregion = s.nextInt();
+        int count = s.nextInt();
         s.nextLine();
 
         double [] mapLims = new double[4];
@@ -50,98 +47,157 @@ public class ElectoralMap
         StdDraw.setYscale(mapLims[1],mapLims[3]);
 
         StdDraw.enableDoubleBuffering();
+    }
+
+    public void geoData(String region) throws Exception
+    {
+        setScale(region);
+        File f = new File("./input/" + region +".txt");
+        Scanner s = new Scanner(f);
+
+        s.nextLine();
+        s.nextLine();
+        int countTo = s.nextInt();
+        s.nextLine();
+        s.nextLine();
+
         String[] coords = new String[2];
-        int z = 0;
+        int count = 0;
 
-        while(z < subregion) 
+        while(count < countTo) 
         {
+            String countyName = s.nextLine();
+            if (countyName.indexOf(" Parish") > -1)
+            {
+                countyName = countyName.substring(0, countyName.indexOf(" Parish"));
+                System.out.println(countyName);
+            }
+            else if (countyName.indexOf(" city") > -1)
+            {
+                countyName = countyName.substring(0, countyName.indexOf(" city"));
+                System.out.println(countyName);
+            }
+            countyName = countyName.toLowerCase();    
+            String stateName = s.nextLine();
+
+            if (electoralMap.containsKey(stateName) == false)
+            {
+                HashMap<String, ArrayList<Subregion>> innerMap = new HashMap<>();
+                ArrayList<Subregion> counties = new ArrayList<>();
+                innerMap.put(stateName, counties);
+                electoralMap.put(stateName, innerMap);
+            }
+
+            Subregion county = new Subregion(countyName);
+
+            int numPoints = s.nextInt();
             s.nextLine();
+            double[] x = new double[numPoints];
+            double[] y = new double[numPoints];
 
-            String subname = s.nextLine();
-            Subregion newSub = new Subregion(subname);
-
-            s.nextLine();
-
-            int points = s.nextInt();
-
-            s.nextLine();
-
-            double[] x = new double[points];
-            double[] y = new double[points];
-
-            int c = 0;
-            while (c < points)
+            int pointCounter = 0;
+            while (pointCounter < numPoints)
             {
                 coords = s.nextLine().split("   ");
-                x[c] = Double.parseDouble(coords[0]);
-                y[c] = Double.parseDouble(coords[1]);
-                c++;
+                x[pointCounter] = Double.parseDouble(coords[0]);
+                y[pointCounter] = Double.parseDouble(coords[1]);
+                pointCounter++;
             }
             StdDraw.polygon(x , y);
+            s.nextLine();
 
-            newSub.xCoordinates = x;
-            newSub.yCoordinates = y;
+            county.xCoordinates = x;
+            county.yCoordinates = y;
 
-            electoralMap.get(region).add(newSub);
+            electoralMap.get(stateName).get(stateName).add(county);
 
-            z++;
+            count++;
         }
-
         s.close();
         StdDraw.show();
+    }
 
-        File f2 = new File("./input/" + region + String.valueOf(year) +".txt");
-        Scanner s2 = new Scanner(f2);
-        s2.nextLine();
-
-        String[] voteHolder = new String[4];
-        int[] votes = new int[3];
-
-        while (s2.hasNextLine())
+    public void votingData(String region, int year) throws Exception
+    {
+        geoData(region);
+        Object[] keys = electoralMap.keySet().toArray();
+        String[] stringKeys = new String[keys.length];
+        for (int i = 0; i < keys.length; i++)
         {
-            voteHolder = s2.nextLine().split(",");
-            votes[0] = Integer.parseInt(voteHolder[1]);
-            votes[1] = Integer.parseInt(voteHolder[2]);
-            votes[2] = Integer.parseInt(voteHolder[3]);
-            String key = voteHolder[0];
+            stringKeys[i] = keys[i].toString();
+        }
+        for (int i = 0; i < stringKeys.length; i++)
+        {
+            File f = new File("./input/" + stringKeys[i] + String.valueOf(year) +".txt");
+            Scanner s = new Scanner(f);
+            s.nextLine();
 
-            for(int i = 0; i < subregion; i++)
+            String[] voteHolder = new String[4];
+            int[] votes = new int[3];
+            int count = 0;
+            while (s.hasNextLine())
             {
-                if (electoralMap.get(region).get(i).name.equals(key))
+                voteHolder = s.nextLine().split(",");
+                String countyname = voteHolder[0].toLowerCase();
+
+                votes[0] = Integer.parseInt(voteHolder[1]);
+                votes[1] = Integer.parseInt(voteHolder[2]);
+                votes[2] = Integer.parseInt(voteHolder[3]);
+                for (int j = 0; j < electoralMap.get(stringKeys[i]).get(stringKeys[i]).size(); j++)
                 {
-                    electoralMap.get(region).get(i).rVotes = votes[0];
-                    electoralMap.get(region).get(i).dVotes = votes[1];
-                    electoralMap.get(region).get(i).oVotes = votes[2];
+                    if (electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).name.equals(countyname))
+                    {
+                        electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).rVotes = votes[0];
+                        electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).dVotes = votes[1];
+                        electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).oVotes = votes[2];
+                    }
+                    count++;
+                }
+
+            }
+            s.close();
+        }
+    }
+
+    public void visualize(String region, int year) throws Exception
+    { 
+        votingData(region, year);
+        Object[] keys = electoralMap.keySet().toArray();
+        String[] stringKeys = new String[keys.length];
+        for (int i = 0; i < keys.length; i++)
+        {
+            stringKeys[i] = keys[i].toString();
+        }
+
+        for(int i = 0; i < stringKeys.length; i++)
+        {
+            for(int j = 0; j < electoralMap.get(stringKeys[i]).get(stringKeys[i]).size(); j++)
+            {
+                if (electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).rVotes > electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).dVotes && 
+                electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).rVotes > electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).oVotes)
+                {
+                    StdDraw.setPenColor(StdDraw.RED);
+                    StdDraw.filledPolygon(electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).xCoordinates, 
+                        electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).yCoordinates);
+                }
+                else  if (electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).dVotes > electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).rVotes && 
+                electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).dVotes > electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).oVotes)
+                {
+                    StdDraw.setPenColor(StdDraw.BLUE);
+                    StdDraw.filledPolygon(electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).xCoordinates, 
+                        electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).yCoordinates);
+                }
+                else  if (electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).oVotes > electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).dVotes && 
+                electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).oVotes > electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).rVotes)
+                {
+                    StdDraw.setPenColor(StdDraw.GREEN);
+                    StdDraw.filledPolygon(electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).xCoordinates, 
+                        electoralMap.get(stringKeys[i]).get(stringKeys[i]).get(j).yCoordinates);
                 }
             }
         }
-        s2.close();
 
-        for(int i = 0; i < subregion; i++)
-        {
-            if (electoralMap.get(region).get(i).rVotes > electoralMap.get(region).get(i).dVotes && 
-            electoralMap.get(region).get(i).rVotes > electoralMap.get(region).get(i).oVotes)
-            {
-                StdDraw.setPenColor(StdDraw.RED);
-                StdDraw.filledPolygon(electoralMap.get(region).get(i).xCoordinates, 
-                electoralMap.get(region).get(i).yCoordinates);
-            }
-            else if (electoralMap.get(region).get(i).dVotes > electoralMap.get(region).get(i).rVotes && 
-            electoralMap.get(region).get(i).dVotes > electoralMap.get(region).get(i).oVotes)
-            {
-                StdDraw.setPenColor(StdDraw.BLUE);
-                StdDraw.filledPolygon(electoralMap.get(region).get(i).xCoordinates, 
-                electoralMap.get(region).get(i).yCoordinates);
-            }
-            else if (electoralMap.get(region).get(i).oVotes > electoralMap.get(region).get(i).rVotes && 
-            electoralMap.get(region).get(i).oVotes > electoralMap.get(region).get(i).dVotes)
-            {
-                StdDraw.setPenColor(StdDraw.GREEN);
-                StdDraw.filledPolygon(electoralMap.get(region).get(i).xCoordinates, 
-                electoralMap.get(region).get(i).yCoordinates);
-            }
-        }
-        
         StdDraw.show();
     }
 }
+
